@@ -98,6 +98,10 @@ admin_options db '    [1] Book Management$'
 invalid_option db 13,10,'    Invalid option! Please try again.$'
 goodbye_msg db 13,10,'    Logging out... Thank you!$'
 
+; In the DATA section, add:
+admin_initial_menu db 13,10,'    [1] Go to Admin Control Panel$'
+                  db 13,10,13,10,'    Select option (1): $'
+
 .CODE
 MAIN PROC
     ; Initialize DS
@@ -214,9 +218,21 @@ valid_login:
     MOV AH, 9
     INT 21h
     
-    LEA DX, newline
+    LEA DX, admin_initial_menu
     MOV AH, 9
     INT 21h
+
+initial_choice:
+    ; Get choice
+    MOV AH, 1
+    INT 21h
+    SUB AL, '0'  ; Convert ASCII to number
+    
+    CMP AL, 1
+    JE admin_menu
+    
+    ; If invalid choice, wait for correct input
+    JMP initial_choice
 
 admin_menu:
     ; Clear screen (optional)

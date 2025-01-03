@@ -89,9 +89,9 @@ book_format db 13,10,'    | $'
 admin_menu_header db 13,10,'    ================================$'
                  db 13,10,'    |      ADMIN CONTROL PANEL      |$'
                  db 13,10,'    ================================$'
-                 db 13,10,'$'  ; Add extra newline
+                 db 13,10,'$'  ; Extra newline after header
 
-admin_options db '    [1] Book Management$'
+admin_options db 13,10,'    [1] Book Management$'
              db 13,10,'    [2] Logout$'
              db 13,10,13,10,'    Select option (1-2): $'
 
@@ -101,6 +101,16 @@ goodbye_msg db 13,10,'    Logging out... Thank you!$'
 ; In the DATA section, add:
 admin_initial_menu db 13,10,'    [1] Go to Admin Control Panel$'
                   db 13,10,13,10,'    Select option (1): $'
+
+; In DATA section, modify the header definition:
+admin_header1 db 13,10,'    ================================$'
+admin_header2 db 13,10,'    |      ADMIN CONTROL PANEL      |$'
+admin_header3 db 13,10,'    ================================$'
+
+; In DATA section:
+admin_option1 db 13,10,'    [1] Book Management$'
+admin_option2 db 13,10,'    [2] Logout$'
+admin_select db 13,10,13,10,'    Select option (1-2): $'
 
 .CODE
 MAIN PROC
@@ -235,18 +245,42 @@ initial_choice:
     JMP initial_choice
 
 admin_menu:
-    ; Clear screen (optional)
+    ; Clear screen
     MOV AX, 0003h
     INT 10h
     
-    ; Display admin menu header and options
-    LEA DX, admin_menu_header
+    ; Display header
+    LEA DX, admin_header1
     MOV AH, 9
     INT 21h
     
-    LEA DX, admin_options
+    LEA DX, admin_header2
+    MOV AH, 9
     INT 21h
     
+    LEA DX, admin_header3
+    MOV AH, 9
+    INT 21h
+    
+    ; Display newline
+    LEA DX, newline
+    MOV AH, 9
+    INT 21h
+    
+    ; Display options
+    LEA DX, admin_option1
+    MOV AH, 9
+    INT 21h
+    
+    LEA DX, admin_option2
+    MOV AH, 9
+    INT 21h
+    
+    LEA DX, admin_select
+    MOV AH, 9
+    INT 21h
+
+get_admin_choice:    
     ; Get choice
     MOV AH, 1
     INT 21h
@@ -262,7 +296,7 @@ admin_menu:
     MOV AH, 9
     INT 21h
     JMP admin_menu
-
+    
 book_mgmt:
     CALL book_management
     JMP admin_menu

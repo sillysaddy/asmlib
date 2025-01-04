@@ -6,26 +6,14 @@
 ; Messages
 prompt_id db 'Enter ID (2 digits): $'
 prompt_pass db 'Enter Password (6 digits): $'
-admin_msg1 db 13,10,'    ********************************$'
-admin_msg2 db 13,10,'    *      WELCOME TO ASMLIB       *$'
-admin_msg3 db 13,10,'    *     MANAGEMENT SYSTEM        *$'
-admin_msg4 db 13,10,'    *                              *$'
-admin_msg5 db 13,10,'    *         ADMIN PANEL          *$'
-admin_msg6 db 13,10,'    ********************************$'
+; Admin messages
+admin_welcome db 13,10,'### Welcome to ASMLIB Management System Admin Panel ###$'
 
-user_msg1 db 13,10,'    +=========================+$'
-user_msg2 db 13,10,'    |     WELCOME TO ASMLIB   |$'
-user_msg3 db 13,10,'    |    MANAGEMENT SYSTEM    |$'
-user_msg4 db 13,10,'    |                         |$'
-user_msg5 db 13,10,'    |      USER INTERFACE     |$'
-user_msg6 db 13,10,'    +=========================+$'
+; User messages
+user_welcome db 13,10,'=== Welcome to ASMLIB Management System User Interface ===$'
 
-error_msg1 db 13,10,'    !!!!!!!!!!!!!!!!!!!!!!!!!!!!$'
-error_msg2 db 13,10,'    ! Invalid ID or Password! !$'
-error_msg3 db 13,10,'    !      Please try again   !$'
-error_msg4 db 13,10,'    !!!!!!!!!!!!!!!!!!!!!!!!!!!!$'
-
-newline db 13,10,'$'
+; Error message
+error_msg db 13,10,'!!! Invalid ID or Password! Please try again !!!$'
 
 ; User database
 ; Format: ID (2 bytes), Password (6 bytes)
@@ -52,15 +40,9 @@ books db MAX_BOOKS * BOOK_SIZE dup(?) ; Book database
 book_count dw 0      ; Current number of books
 
 ; Book management menu messages
-book_menu_header1 db 13,10,'    ==================================$'
-book_menu_header2 db 13,10,'    |       BOOK MANAGEMENT          |$'
-book_menu_header3 db 13,10,'    ==================================$'
-book_menu_option1 db 13,10,'    |   1. Add New Book             |$'
-book_menu_option2 db 13,10,'    |   2. Remove Book              |$'
-book_menu_option3 db 13,10,'    |   3. View All Books           |$'
-book_menu_option4 db 13,10,'    |   4. Return to Main Menu      |$'
-book_menu_footer  db 13,10,'    ==================================$'
-book_menu_prompt  db 13,10,'    Enter choice: $'
+book_menu_header db 13,10,'=== BOOK MANAGEMENT SYSTEM ===$'
+book_menu_options db 13,10,'1. Add Book | 2. Remove Book | 3. View Books | 4. Return$'
+book_menu_prompt db 13,10,'Enter choice: $'
 
 ; Book input prompts
 prompt_bookid db 13,10,'Enter Book ID (4 digits): $'
@@ -77,24 +59,12 @@ prompt_remove_id db 13,10,'Enter Book ID to remove: $'
 book_not_found db 13,10,'Error: Book not found!$'
 
 ; Add to DATA section
-view_header1 db 13,10,'    +===========================================+$'
-view_header2 db 13,10,'    |              BOOK LISTING               |$'
-view_header3 db 13,10,'    |-------------------------------------------$'
-view_header4 db 13,10,'    | ID  |     Title          |    Author     |$'
-view_header5 db 13,10,'    |-------------------------------------------$'
+view_header db 13,10,'=== BOOK LISTING ===$'
+view_columns db 13,10,'ID   |     Title          |    Author     $'
+view_separator db 13,10,'----------------------------------------$'
 no_books db 13,10,'    |          No books in database           |$'
 total_books db 13,10,'    Total books: $'
 book_format db 13,10,'    | $'
-
-; Add to DATA section
-admin_menu_header db 13,10,'    ================================$'
-                 db 13,10,'    |      ADMIN CONTROL PANEL      |$'
-                 db 13,10,'    ================================$'
-                 db 13,10,'$'  ; Extra newline after header
-
-admin_options db 13,10,'    [1] Book Management$'
-             db 13,10,'    [2] Logout$'
-             db 13,10,13,10,'    Select option (1-2): $'
 
 invalid_option db 13,10,'    Invalid option! Please try again.$'
 goodbye_msg db 13,10,'    Logging out... Thank you!$'
@@ -103,15 +73,6 @@ goodbye_msg db 13,10,'    Logging out... Thank you!$'
 admin_initial_menu db 13,10,'    [1] Go to Admin Control Panel$'
                   db 13,10,13,10,'    Select option (1): $'
 
-; In DATA section, modify the header definition:
-admin_header1 db 13,10,'    ================================$'
-admin_header2 db 13,10,'    |      ADMIN CONTROL PANEL      |$'
-admin_header3 db 13,10,'    ================================$'
-
-; In DATA section:
-admin_option1 db 13,10,'    [1] Book Management$'
-admin_option2 db 13,10,'    [2] Logout$'
-admin_select db 13,10,13,10,'    Select option (1-2): $'
 
 ; In DATA section:
 ; Book Structure (50 bytes per book):
@@ -133,6 +94,16 @@ initial_books db '0001', 'Pride Prejudice     ', 'Jane Austen     ', 'Romance   
              db '0010', 'Fahrenheit 451     ', 'Ray Bradbury   ', 'SciFi     ', 0        ; Correct
 
 num_buffer db 6 dup(?), '$'  ; Buffer for number conversion
+
+
+; Admin menu
+admin_menu_header db 13,10,'=== ADMIN CONTROL PANEL ===$'
+admin_options db 13,10,'1. Book Management | 2. Logout$'
+admin_prompt db 13,10,'Select option: $'
+
+; Add to DATA segment
+newline db 13,10,'$'     ; Carriage return + line feed
+view_header1 db 13,10,'=== END OF LISTING ===$'
 
 .CODE
 MAIN PROC
@@ -222,70 +193,32 @@ next_user:
     LOOP check_credentials
     
     ; Invalid login
-    LEA DX, newline
-    MOV AH, 9
-    INT 21h
-    
-    LEA DX, error_msg1
-    MOV AH, 9
-    INT 21h
-    
-    LEA DX, error_msg2
-    MOV AH, 9
-    INT 21h
-    
-    LEA DX, error_msg3
-    MOV AH, 9
-    INT 21h
-    
-    LEA DX, error_msg4
-    MOV AH, 9
-    INT 21h
-    
-    JMP login_start
+    JMP invalid_login
     
 valid_login:
-    POP CX
-    LEA DX, newline
-    MOV AH, 9
-    INT 21h
+    POP CX  ; Restore stack
+    CALL print_welcome
     
     ; Check if admin (ID <= 03) or user
     MOV SI, OFFSET input_id
     CMP BYTE PTR [SI], '0'
-    JNE user_welcome
+    JNE start_user_menu   ; Changed from user_welcome to start_user_menu
     MOV AL, [SI+1]
     CMP AL, '3'
-    JA user_welcome
+    JA start_user_menu    ; Changed from user_welcome to start_user_menu
     
-    ; Display admin welcome
-    LEA DX, admin_msg1
-    MOV AH, 9
-    INT 21h
-    
-    LEA DX, admin_msg2
-    MOV AH, 9
-    INT 21h
-    
-    LEA DX, admin_msg3
-    MOV AH, 9
-    INT 21h
-    
-    LEA DX, admin_msg4
-    MOV AH, 9
-    INT 21h
-    
-    LEA DX, admin_msg5
-    MOV AH, 9
-    INT 21h
-    
-    LEA DX, admin_msg6
-    MOV AH, 9
-    INT 21h
-    
+    ; Display admin menu options
     LEA DX, admin_initial_menu
     MOV AH, 9
     INT 21h
+    JMP initial_choice    ; Jump to get admin's choice
+
+start_user_menu:          ; New label for user menu handling
+    ; For now, just exit since user menu isn't implemented
+    LEA DX, goodbye_msg
+    MOV AH, 9
+    INT 21h
+    JMP exit_prog
 
 initial_choice:
     ; Get choice
@@ -304,34 +237,16 @@ admin_menu:
     MOV AX, 0003h
     INT 10h
     
-    ; Display header
-    LEA DX, admin_header1
+    ; Display admin menu
+    LEA DX, admin_menu_header
     MOV AH, 9
     INT 21h
     
-    LEA DX, admin_header2
+    LEA DX, admin_options
     MOV AH, 9
     INT 21h
     
-    LEA DX, admin_header3
-    MOV AH, 9
-    INT 21h
-    
-    ; Display newline
-    LEA DX, newline
-    MOV AH, 9
-    INT 21h
-    
-    ; Display options
-    LEA DX, admin_option1
-    MOV AH, 9
-    INT 21h
-    
-    LEA DX, admin_option2
-    MOV AH, 9
-    INT 21h
-    
-    LEA DX, admin_select
+    LEA DX, admin_prompt
     MOV AH, 9
     INT 21h
 
@@ -362,34 +277,6 @@ logout:
     INT 21h
     JMP exit_prog
     
-user_welcome:
-    LEA DX, user_msg1
-    MOV AH, 9
-    INT 21h
-    
-    LEA DX, user_msg2
-    MOV AH, 9
-    INT 21h
-    
-    LEA DX, user_msg3
-    MOV AH, 9
-    INT 21h
-    
-    LEA DX, user_msg4
-    MOV AH, 9
-    INT 21h
-    
-    LEA DX, user_msg5
-    MOV AH, 9
-    INT 21h
-    
-    LEA DX, user_msg6
-    MOV AH, 9
-    INT 21h
-    
-    LEA DX, newline
-    MOV AH, 9
-    INT 21h
     
 exit_prog:
     MOV AX, 4C00H
@@ -450,36 +337,12 @@ book_menu_loop:
     MOV AX, 0003h
     INT 10h
     
-    ; Display menu line by line
-    LEA DX, book_menu_header1
+    ; Display menu
+    LEA DX, book_menu_header
     MOV AH, 9
     INT 21h
     
-    LEA DX, book_menu_header2
-    MOV AH, 9
-    INT 21h
-    
-    LEA DX, book_menu_header3
-    MOV AH, 9
-    INT 21h
-    
-    LEA DX, book_menu_option1
-    MOV AH, 9
-    INT 21h
-    
-    LEA DX, book_menu_option2
-    MOV AH, 9
-    INT 21h
-    
-    LEA DX, book_menu_option3
-    MOV AH, 9
-    INT 21h
-    
-    LEA DX, book_menu_option4
-    MOV AH, 9
-    INT 21h
-    
-    LEA DX, book_menu_footer
+    LEA DX, book_menu_options
     MOV AH, 9
     INT 21h
     
@@ -687,19 +550,15 @@ view_books PROC
     INT 10h
 
     ; Display headers
-    LEA DX, view_header1
+    LEA DX, view_header
     MOV AH, 9
     INT 21h
-    LEA DX, view_header2
+    
+    LEA DX, view_columns
     MOV AH, 9
     INT 21h
-    LEA DX, view_header3
-    MOV AH, 9
-    INT 21h
-    LEA DX, view_header4
-    MOV AH, 9
-    INT 21h
-    LEA DX, view_header5
+    
+    LEA DX, view_separator
     MOV AH, 9
     INT 21h
 
@@ -769,7 +628,7 @@ display_author_loop:
     INC SI
     LOOP display_author_loop
 
-    ; Add newline
+    ; Add newline - use correct variable
     LEA DX, newline
     MOV AH, 9
     INT 21h
@@ -789,7 +648,7 @@ no_books_found:
     INT 21h
 
 display_total:
-    ; Display footer
+    ; Display footer - now correctly defined
     LEA DX, view_header1
     MOV AH, 9
     INT 21h
@@ -881,8 +740,50 @@ reverse_done:
     RET
 convert_number_to_string ENDP
 
+; Display welcome messages based on user type
+print_welcome:
+    LEA DX, newline
+    MOV AH, 9
+    INT 21h
+
+    ; SI still points to input_id from earlier validation
+    CMP BYTE PTR [SI], '0'
+    JNE print_user_welcome
+    MOV AL, [SI+1]
+    CMP AL, '3'
+    JA print_user_welcome
+
+    ; Display admin welcome
+    LEA DX, admin_welcome
+    MOV AH, 9 
+    INT 21h
+    JMP welcome_done
+
+print_user_welcome:
+    ; Display user welcome
+    LEA DX, user_welcome
+    MOV AH, 9
+    INT 21h
+
+welcome_done:
+    RET
+
 ; Debug - verify first user ID
 MOV AL, [SI]      ; Should be '0'
 MOV AH, [SI+1]    ; Should be '1'
+
+; Invalid login handler in MAIN procedure
+invalid_login:    
+    ; Use the existing error_msg variable that's already defined
+    LEA DX, error_msg
+    MOV AH, 9
+    INT 21h
+    
+    ; Add newline for spacing
+    LEA DX, newline
+    MOV AH, 9
+    INT 21h
+    
+    JMP login_start
 
 END MAIN

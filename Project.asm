@@ -52,14 +52,15 @@ books db MAX_BOOKS * BOOK_SIZE dup(?) ; Book database
 book_count dw 0      ; Current number of books
 
 ; Book management menu messages
-book_menu db 13,10,'    ==================================$'
-         db 13,10,'    |       BOOK MANAGEMENT          |$'
-         db 13,10,'    |   1. Add New Book             |$'
-         db 13,10,'    |   2. Remove Book              |$'
-         db 13,10,'    |   3. View All Books           |$'
-         db 13,10,'    |   4. Return to Main Menu      |$'
-         db 13,10,'    ==================================$'
-         db 13,10,'    Enter choice: $'
+book_menu_header1 db 13,10,'    ==================================$'
+book_menu_header2 db 13,10,'    |       BOOK MANAGEMENT          |$'
+book_menu_header3 db 13,10,'    ==================================$'
+book_menu_option1 db 13,10,'    |   1. Add New Book             |$'
+book_menu_option2 db 13,10,'    |   2. Remove Book              |$'
+book_menu_option3 db 13,10,'    |   3. View All Books           |$'
+book_menu_option4 db 13,10,'    |   4. Return to Main Menu      |$'
+book_menu_footer  db 13,10,'    ==================================$'
+book_menu_prompt  db 13,10,'    Enter choice: $'
 
 ; Book input prompts
 prompt_bookid db 13,10,'Enter Book ID (4 digits): $'
@@ -112,11 +113,65 @@ admin_option1 db 13,10,'    [1] Book Management$'
 admin_option2 db 13,10,'    [2] Logout$'
 admin_select db 13,10,13,10,'    Select option (1-2): $'
 
+; In DATA section:
+; Book Structure (50 bytes per book):
+; - ID (4 bytes)
+; - Title (20 bytes)
+; - Author (15 bytes)
+; - Genre (10 bytes)
+; - Status (1 byte): 0=Available, 1=Borrowed
+
+initial_books db '0001', 'Pride Prejudice     ', 'Jane Austen     ', 'Romance   ', 0
+             db '0002', 'Great Expectations  ', 'Charles Dickens', 'Coming Age', 0   ; Correct: 4+20+15+10+1=50
+             db '0003', 'Animal Farm        ', 'George Orwell  ', 'Political ', 0    ; Correct: 4+20+15+10+1=50
+             db '0004', 'Invisible Man      ', 'Ralph Ellison  ', 'Fiction   ', 0     ; Correct
+             db '0005', 'Catch-22           ', 'Joseph Heller  ', 'Satirical ', 0     ; Correct
+             db '0006', 'Brave New World    ', 'Aldous Huxley  ', 'Dystopian ', 0      ; Correct
+             db '0007', 'Beloved Memory     ', 'Toni Morrison  ', 'Historical', 0    ; Correct
+             db '0008', 'White Teeth        ', 'Zadie Smith    ', 'Contemp   ', 0      ; Correct
+             db '0009', 'Rebecca Memories   ', 'Daphne Maurier ', 'Gothic    ', 0      ; Correct
+             db '0010', 'Fahrenheit 451     ', 'Ray Bradbury   ', 'SciFi     ', 0        ; Correct
+
+num_buffer db 6 dup(?), '$'  ; Buffer for number conversion
+
 .CODE
 MAIN PROC
     ; Initialize DS
     MOV AX, @DATA
     MOV DS, AX
+
+    ; Initialize books database
+    MOV CX, 10              ; Number of initial books
+    MOV SI, OFFSET initial_books
+    MOV DI, OFFSET books
+    MOV book_count, CX      ; Set initial book count
+
+copy_initial_books_outer:
+    PUSH CX              ; Save the outer loop counter
+
+    ; Inner loop: copy 50 bytes for each book
+    MOV CX, BOOK_SIZE    ; CX = 50 (bytes per book)
+
+copy_initial_books_inner:
+    MOV AL, [SI]         ; Load byte from initial_books
+    MOV [DI], AL         ; Store byte to books
+    INC SI               ; Move to next byte in initial_books
+    INC DI               ; Move to next byte in books
+    LOOP copy_initial_books_inner
+
+    POP CX               ; Restore the outer loop counter
+    DEC CX               ; Decrement book count
+    JNZ copy_initial_books_outer  ; If not zero, continue copying
+
+    ; All books copied
+    JMP after_copy_initial_books
+
+copy_initial_books_done:
+    ; Handle any errors if needed
+    JMP after_copy_initial_books
+
+after_copy_initial_books:
+    ; Continue with the rest of your program
 
 login_start:
     ; Display ID prompt
@@ -391,8 +446,44 @@ book_management PROC
     PUSH DX
 
 book_menu_loop:
-    ; Display menu
-    LEA DX, book_menu
+    ; Clear screen
+    MOV AX, 0003h
+    INT 10h
+    
+    ; Display menu line by line
+    LEA DX, book_menu_header1
+    MOV AH, 9
+    INT 21h
+    
+    LEA DX, book_menu_header2
+    MOV AH, 9
+    INT 21h
+    
+    LEA DX, book_menu_header3
+    MOV AH, 9
+    INT 21h
+    
+    LEA DX, book_menu_option1
+    MOV AH, 9
+    INT 21h
+    
+    LEA DX, book_menu_option2
+    MOV AH, 9
+    INT 21h
+    
+    LEA DX, book_menu_option3
+    MOV AH, 9
+    INT 21h
+    
+    LEA DX, book_menu_option4
+    MOV AH, 9
+    INT 21h
+    
+    LEA DX, book_menu_footer
+    MOV AH, 9
+    INT 21h
+    
+    LEA DX, book_menu_prompt
     MOV AH, 9
     INT 21h
     
@@ -461,7 +552,7 @@ add_book PROC
     LEA DX, prompt_title
     MOV AH, 9
     INT 21h
-    MOV CX, 30
+    MOV CX, 20 ;Read 20 bytes for title
     ADD SI, 4       ; Skip past ID
     CALL read_input
     
@@ -469,9 +560,14 @@ add_book PROC
     LEA DX, prompt_author
     MOV AH, 9
     INT 21h
-    MOV CX, 15
-    ADD SI, 30      ; Skip past title
+    MOV CX, 15     ; Read 15 bytes for author
+    ADD SI, 20      ; Skip past title
     CALL read_input
+
+    ; Initialize Genre and Status (Optional)
+        ; You can initialize Genre and Status here if needed
+    MOV BYTE PTR [SI], ' '    ; Initialize Genre with spaces
+    MOV BYTE PTR [SI+10], 0    ; Initialize Status to Available (0)
     
     ; Increment book count
     INC book_count
@@ -584,73 +680,107 @@ view_books PROC
     PUSH CX
     PUSH DX
     PUSH SI
+    PUSH DI
+
+    ; Clear screen
+    MOV AX, 0003h
+    INT 10h
 
     ; Display headers
     LEA DX, view_header1
     MOV AH, 9
     INT 21h
     LEA DX, view_header2
+    MOV AH, 9
     INT 21h
     LEA DX, view_header3
+    MOV AH, 9
     INT 21h
     LEA DX, view_header4
+    MOV AH, 9
     INT 21h
     LEA DX, view_header5
+    MOV AH, 9
     INT 21h
 
     ; Check if books exist
-    CMP book_count, 0
+    MOV AX, book_count
+    CMP AX, 0
     JE no_books_found
 
     ; Initialize
-    MOV CX, book_count
-    LEA SI, books
+    MOV BX, book_count        ; Use BX for outer loop (number of books)
+    LEA SI, books             ; Point to the first book
 
-display_loop:
-    PUSH CX
-    
+display_books_loop:
+    PUSH BX                   ; Save outer loop counter
+
     ; Display book format prefix
     LEA DX, book_format
     MOV AH, 9
     INT 21h
 
     ; Display ID (4 chars)
-    MOV CX, 4
-display_id:
+    MOV CX, 4                 ; Use CX for inner loop (ID)
+display_id_loop:
     MOV DL, [SI]
     MOV AH, 2
     INT 21h
     INC SI
-    LOOP display_id
+    LOOP display_id_loop      ; LOOP decrements CX and jumps if not zero
 
+    ; Display separator
+    MOV DL, ' '
+    MOV AH, 2
+    INT 21h
     MOV DL, '|'
     MOV AH, 2
     INT 21h
+    MOV DL, ' '
+    MOV AH, 2
+    INT 21h
 
-    ; Display Title (30 chars)
-    MOV CX, 30
-display_title:
+    ; Display Title (20 chars)
+    MOV CX, 20                ; Use CX for inner loop (Title)
+display_title_loop:
     MOV DL, [SI]
     MOV AH, 2
     INT 21h
     INC SI
-    LOOP display_title
+    LOOP display_title_loop
 
+    ; Display separator
+    MOV DL, ' '
+    MOV AH, 2
+    INT 21h
     MOV DL, '|'
+    MOV AH, 2
+    INT 21h
+    MOV DL, ' '
     MOV AH, 2
     INT 21h
 
     ; Display Author (15 chars)
-    MOV CX, 15
-display_author:
+    MOV CX, 15                ; Use CX for inner loop (Author)
+display_author_loop:
     MOV DL, [SI]
     MOV AH, 2
     INT 21h
     INC SI
-    LOOP display_author
+    LOOP display_author_loop
 
-    POP CX
-    LOOP display_loop
+    ; Add newline
+    LEA DX, newline
+    MOV AH, 9
+    INT 21h
+
+    ; Skip Genre and Status (11 bytes)
+    ADD SI, 11
+
+    POP BX                    ; Restore outer loop counter
+    DEC BX                    ; Decrement book count
+    JNZ display_books_loop    ; If not zero, continue looping
+
     JMP display_total
 
 no_books_found:
@@ -659,19 +789,35 @@ no_books_found:
     INT 21h
 
 display_total:
+    ; Display footer
     LEA DX, view_header1
     MOV AH, 9
     INT 21h
+
+    ; Show total books
     LEA DX, total_books
-    INT 21h
-    
-    ; Convert book_count to ASCII and display
-    MOV AX, book_count
-    ADD AL, 30h
-    MOV DL, AL
-    MOV AH, 2
+    MOV AH, 9
     INT 21h
 
+    ; Convert book_count to ASCII and store in num_buffer
+    MOV AX, book_count
+    CALL convert_number_to_string
+
+    ; Display the number
+    LEA DX, num_buffer
+    MOV AH, 9
+    INT 21h
+
+    ; Add newline
+    LEA DX, newline
+    MOV AH, 9
+    INT 21h
+
+    ; Wait for keypress
+    MOV AH, 1
+    INT 21h
+
+    POP DI
     POP SI
     POP DX
     POP CX
@@ -679,6 +825,61 @@ display_total:
     POP AX
     RET
 view_books ENDP
+
+; Number conversion procedure
+convert_number_to_string PROC
+    PUSH AX
+    PUSH BX
+    PUSH CX
+    PUSH DX
+    PUSH DI
+
+    ; Initialize
+    XOR AX, AX          ; Clear AX
+    MOV AX, book_count  ; AX = book_count
+    XOR CX, CX          ; CX = 0 (digit counter)
+    LEA DI, num_buffer  ; DI points to num_buffer
+
+convert_number_loop:
+    XOR DX, DX          ; Clear DX before DIV
+    MOV BX, 10
+    DIV BX              ; Divide AX by 10; AX = quotient, DX = remainder
+    ADD DL, '0'         ; Convert remainder to ASCII
+    MOV [DI], DL        ; Store ASCII digit
+    INC DI
+    INC CX
+    CMP AX, 0
+    JNZ convert_number_loop
+
+    ; Append '$' to terminate the string
+    MOV BYTE PTR [DI], '$'
+
+    ; Reverse the digits in num_buffer for correct order
+    ; Assuming max 5 digits for book_count
+    ; Initialize SI to start of num_buffer and DI to end
+    LEA SI, num_buffer
+    DEC DI               ; Point to last digit
+    ; Simple reverse algorithm
+reverse_digits_loop:
+    CMP SI, DI
+    JGE reverse_done
+    MOV AL, [SI]
+    MOV BL, [DI]
+    MOV [SI], BL
+    MOV [DI], AL
+    INC SI
+    DEC DI
+    JMP reverse_digits_loop
+reverse_done:
+
+    ; Restore registers
+    POP DI
+    POP DX
+    POP CX
+    POP BX
+    POP AX
+    RET
+convert_number_to_string ENDP
 
 ; Debug - verify first user ID
 MOV AL, [SI]      ; Should be '0'

@@ -1,0 +1,10 @@
+; This file is intended to store predefined user credentials for both admin and regular users.
+; The format will be simple, allowing for easy access and validation during login.
+
+; Admin credentials
+AdminUsername: DB 'admin', 0
+AdminPassword: DB 'password123', 0
+
+; User credentials
+UserUsername: DB 'user', 0
+UserPassword: DB 'userpass', 0
